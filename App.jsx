@@ -44,12 +44,16 @@ import {
   saveBudgetToCloud,
 } from "./firebase";
 
+function publicAsset(path) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+}
+
 const FAMILY_MEMBERS = [
-  { id: "member1", name: "Сима", photo: "/avatars/member-1.png" },
-  { id: "member2", name: "Рыжик", photo: "/avatars/member-2.png" },
-  { id: "member3", name: "Умка", photo: "/avatars/member-3.png" },
-  { id: "member4", name: "Плюша", photo: "/avatars/member-4.png" },
-  { id: "member5", name: "Снежок", photo: "/avatars/member-5.png" },
+  { id: "member1", name: "Сима", photo: publicAsset("avatars/member-1.png") },
+  { id: "member2", name: "Рыжик", photo: publicAsset("avatars/member-2.png") },
+  { id: "member3", name: "Умка", photo: publicAsset("avatars/member-3.png") },
+  { id: "member4", name: "Плюша", photo: publicAsset("avatars/member-4.png") },
+  { id: "member5", name: "Снежок", photo: publicAsset("avatars/member-5.png") },
 ];
 
 const MEMBER_OPTIONS = [{ id: "all", name: "Все" }, ...FAMILY_MEMBERS];
