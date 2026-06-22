@@ -139,8 +139,20 @@ function formatChartTooltipValue(value) {
   return [currency.format(value), ""];
 }
 
-const STORAGE_KEY = "family-budget-demo-v1";
+const STORAGE_KEY = "family-budget-demo-v2";
 const THEME_KEY = "family-budget-demo-theme";
+
+function applyThemeToDocument(theme) {
+  const isDark = theme === "dark";
+  const root = document.documentElement;
+  root.classList.toggle("dark", isDark);
+  root.setAttribute("data-theme", theme);
+  root.style.colorScheme = isDark ? "dark" : "light";
+  localStorage.setItem(THEME_KEY, theme);
+
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", isDark ? "#020617" : "#f8fafc");
+}
 
 const currency = new Intl.NumberFormat("ru-RU", {
   style: "currency",
@@ -216,6 +228,66 @@ function formatDisplayDate(dateStr) {
   const [year, month, day] = String(dateStr || "").split("-");
   if (!year || !month || !day) return dateStr;
   return `${day}.${month}.${year}`;
+}
+
+function parseDisplayDate(value) {
+  const trimmed = String(value || "").trim();
+  const match = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const date = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return null;
+
+  return iso;
+}
+
+function isoDate(year, month, day) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function createDemoTransactions() {
+  return [
+    { id: "demo-1", type: "income", memberId: "member1", category: "Зарплата", customCategory: "", amount: 92000, date: isoDate(2026, 6, 5), note: "Оклад" },
+    { id: "demo-2", type: "income", memberId: "member2", category: "Подработка", customCategory: "", amount: 18000, date: isoDate(2026, 6, 12), note: "Фриланс" },
+    { id: "demo-3", type: "income", memberId: "member3", category: "Премия", customCategory: "", amount: 15000, date: isoDate(2026, 5, 28), note: "Квартальная" },
+    { id: "demo-4", type: "expense", memberId: "member1", category: "Еда", customCategory: "", amount: 4200, date: isoDate(2026, 6, 18), note: "Супермаркет" },
+    { id: "demo-5", type: "expense", memberId: "member2", category: "Кафе", customCategory: "", amount: 890, date: isoDate(2026, 6, 17), note: "Кофе с друзьями" },
+    { id: "demo-6", type: "expense", memberId: "member3", category: "Транспорт", customCategory: "", amount: 2500, date: isoDate(2026, 6, 10), note: "Проездной" },
+    { id: "demo-7", type: "expense", memberId: "member4", category: "Развлечения", customCategory: "", amount: 3200, date: isoDate(2026, 6, 8), note: "Кино" },
+    { id: "demo-8", type: "expense", memberId: "member5", category: "Вещи", customCategory: "", amount: 5600, date: isoDate(2026, 6, 3), note: "Одежда" },
+    { id: "demo-9", type: "expense", memberId: "member1", category: "Дом", customCategory: "", amount: 7800, date: isoDate(2026, 5, 25), note: "Коммуналка" },
+    { id: "demo-10", type: "expense", memberId: "member2", category: "Еда", customCategory: "", amount: 3100, date: isoDate(2026, 5, 20), note: "Продукты" },
+    { id: "demo-11", type: "income", memberId: "member4", category: "Зарплата", customCategory: "", amount: 76000, date: isoDate(2026, 5, 5), note: "Оклад" },
+    { id: "demo-12", type: "expense", memberId: "member3", category: "Здоровье", customCategory: "", amount: 2400, date: isoDate(2026, 5, 14), note: "Аптека" },
+    { id: "demo-13", type: "expense", memberId: "member5", category: "Еда", customCategory: "", amount: 2800, date: isoDate(2026, 4, 22), note: "Магазин" },
+    { id: "demo-14", type: "income", memberId: "member5", category: "Кэшбэк", customCategory: "", amount: 1200, date: isoDate(2026, 4, 18), note: "Банк" },
+    { id: "demo-15", type: "expense", memberId: "member1", category: "Путешествия", customCategory: "", amount: 12500, date: isoDate(2026, 4, 10), note: "Билеты" },
+    { id: "demo-16", type: "expense", memberId: "member4", category: "Связь", customCategory: "", amount: 900, date: isoDate(2026, 4, 5), note: "Мобильный" },
+    { id: "demo-17", type: "income", memberId: "member2", category: "Зарплата", customCategory: "", amount: 68000, date: isoDate(2026, 4, 5), note: "Оклад" },
+    { id: "demo-18", type: "expense", memberId: "member2", category: "Красота", customCategory: "", amount: 3500, date: isoDate(2026, 6, 14), note: "Салон" },
+  ];
+}
+
+function createDemoLimits() {
+  return mergeLimits({
+    Еда: 25000,
+    Кафе: 8000,
+    Транспорт: 6000,
+    Развлечения: 10000,
+    Вещи: 12000,
+    Дом: 15000,
+    Здоровье: 5000,
+    Путешествия: 20000,
+    Связь: 3000,
+    Красота: 5000,
+  });
 }
 
 function groupTransactionsByDay(items) {
@@ -319,21 +391,21 @@ function formatDayTotal(group) {
 function useTheme() {
   const [theme, setTheme] = useState(() => {
     if (typeof window === "undefined") return "dark";
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") return saved;
     return document.documentElement.classList.contains("dark") ? "dark" : "light";
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    const isDark = theme === "dark";
-    root.classList.toggle("dark", isDark);
-    localStorage.setItem(THEME_KEY, theme);
-
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", isDark ? "#020617" : "#f8fafc");
+    applyThemeToDocument(theme);
   }, [theme]);
 
   function toggleTheme() {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      applyThemeToDocument(next);
+      return next;
+    });
   }
 
   return { theme, toggleTheme, isDark: theme === "dark" };
@@ -363,18 +435,29 @@ function loadStoredBudget() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) {
-      return { transactions: [], limits: DEFAULT_LIMITS, monthSummaries: [], revision: 0 };
+      return {
+        transactions: createDemoTransactions(),
+        limits: createDemoLimits(),
+        monthSummaries: [],
+        revision: 0,
+      };
     }
 
     const parsed = JSON.parse(saved);
+    const transactions = Array.isArray(parsed.transactions) ? parsed.transactions : [];
     return {
-      transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+      transactions: transactions.length ? transactions : createDemoTransactions(),
       limits: mergeLimits(parsed.limits),
       monthSummaries: Array.isArray(parsed.monthSummaries) ? parsed.monthSummaries : [],
       revision: typeof parsed.revision === "number" ? parsed.revision : 0,
     };
   } catch {
-    return { transactions: [], limits: DEFAULT_LIMITS, monthSummaries: [], revision: 0 };
+    return {
+      transactions: createDemoTransactions(),
+      limits: createDemoLimits(),
+      monthSummaries: [],
+      revision: 0,
+    };
   }
 }
 
@@ -465,6 +548,7 @@ export default function App() {
     date: today(),
     note: "",
   });
+  const [dateInput, setDateInput] = useState(() => formatDisplayDate(today()));
 
   useEffect(() => {
     transactionsRef.current = transactions;
@@ -787,12 +871,14 @@ export default function App() {
 
   function handleMemberClick(memberId) {
     setEditingId(null);
+    const nextDate = today();
+    setDateInput(formatDisplayDate(nextDate));
     setForm((prev) => ({
       ...prev,
       memberId,
       amount: "",
       note: "",
-      date: today(),
+      date: nextDate,
       customCategory: prev.category === "Своя статья" ? "" : prev.customCategory,
     }));
 
@@ -803,15 +889,17 @@ export default function App() {
   }
 
   function resetForm(type = form.type) {
+    const nextDate = today();
     setForm({
       type,
       memberId: "all",
       category: getDefaultCategory(type),
       customCategory: "",
       amount: "",
-      date: today(),
+      date: nextDate,
       note: "",
     });
+    setDateInput(formatDisplayDate(nextDate));
     setEditingId(null);
   }
 
@@ -833,6 +921,12 @@ export default function App() {
       return;
     }
 
+    const parsedDate = parseDisplayDate(dateInput);
+    if (!parsedDate) {
+      alert("Введите дату в формате ДД.ММ.ГГГГ");
+      return;
+    }
+
     const prepared = {
       id: editingId || createId(),
       type: form.type,
@@ -840,7 +934,7 @@ export default function App() {
       category: form.category,
       customCategory: form.category === "Своя статья" ? form.customCategory.trim() : "",
       amount,
-      date: form.date,
+      date: parsedDate,
       note: form.note.trim(),
     };
 
@@ -877,6 +971,7 @@ if (saved) {
       date: item.date,
       note: item.note || "",
     });
+    setDateInput(formatDisplayDate(item.date));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -1209,7 +1304,24 @@ if (saved) {
               </Field>
 
               <Field label="Дата">
-                <input className="input" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                <input
+                  className="input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="ДД.ММ.ГГГГ"
+                  value={dateInput}
+                  onChange={(e) => {
+                    setDateInput(e.target.value);
+                    const iso = parseDisplayDate(e.target.value);
+                    if (iso) setForm((prev) => ({ ...prev, date: iso }));
+                  }}
+                  onBlur={() => {
+                    const iso = parseDisplayDate(dateInput) || form.date;
+                    setForm((prev) => ({ ...prev, date: iso }));
+                    setDateInput(formatDisplayDate(iso));
+                  }}
+                />
               </Field>
 
               <Field label="Комментарий">
@@ -1578,7 +1690,7 @@ if (saved) {
                         <Fragment key={group.date}>
                           {group.items.map((item) => (
                             <tr key={item.id} className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-100/90 dark:bg-white/5">
-                              <td className="p-3 text-slate-600 dark:text-slate-300">{item.date}</td>
+                              <td className="p-3 text-slate-600 dark:text-slate-300">{formatDisplayDate(item.date)}</td>
                               <td className="p-3">
                                 <span
                                   className={`rounded-full px-3 py-1 text-xs font-bold ${

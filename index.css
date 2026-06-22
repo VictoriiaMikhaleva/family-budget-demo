@@ -6,10 +6,19 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+
+  html.dark {
+    background-color: #020617;
+    color: #f8fafc;
   }
 
   body {
     overflow-x: hidden;
+    background-color: inherit;
+    color: inherit;
   }
 
   /* На iOS поля с font-size < 16px вызывают зум при фокусе */

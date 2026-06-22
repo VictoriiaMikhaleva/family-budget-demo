@@ -5,9 +5,12 @@
     <script>
       (function () {
         var theme = localStorage.getItem("family-budget-demo-theme");
-        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-          document.documentElement.classList.add("dark");
-        }
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var isDark = theme === "dark" || (!theme && prefersDark);
+        var root = document.documentElement;
+        root.classList.toggle("dark", isDark);
+        root.setAttribute("data-theme", isDark ? "dark" : "light");
+        root.style.colorScheme = isDark ? "dark" : "light";
       })();
     </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
