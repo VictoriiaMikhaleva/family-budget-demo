@@ -43,10 +43,11 @@ import {
 } from "./firebase";
 
 const FAMILY_MEMBERS = [
-  { id: "anna", name: "Анна" },
-  { id: "boris", name: "Борис" },
-  { id: "vera", name: "Вера" },
-  { id: "gleb", name: "Глеб" },
+  { id: "gadget", name: "Гайка", photo: "/avatars/gadget.svg" },
+  { id: "rockfor", name: "Рокфор", photo: "/avatars/rockfor.svg" },
+  { id: "chip", name: "Чип", photo: "/avatars/chip.svg" },
+  { id: "dale", name: "Дейл", photo: "/avatars/dale.svg" },
+  { id: "zipper", name: "Вжик", photo: "/avatars/zipper.svg" },
 ];
 
 const MEMBER_OPTIONS = [{ id: "all", name: "Все" }, ...FAMILY_MEMBERS];
@@ -184,6 +185,10 @@ function getMemberById(memberId) {
 
 function getMemberName(memberId) {
   return getMemberById(memberId).name;
+}
+
+function getMemberPhoto(memberId) {
+  return getMemberById(memberId).photo;
 }
 function getCategoryLabel(item) {
   if (item.category === "Своя статья") return item.customCategory?.trim() || "Своя статья";
@@ -982,8 +987,8 @@ if (saved) {
             <div>
               <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-xs text-slate-300 sm:mb-3 sm:px-3 sm:text-sm">
                 <Users size={14} className="shrink-0 sm:h-4 sm:w-4" />
-                <span className="sm:hidden">Демо · семейный бюджет</span>
-                <span className="hidden sm:inline">Демо: семейный бюджет — Анна, Борис, Вера и Глеб</span>
+                <span className="sm:hidden">Спасатели · бюджет</span>
+                <span className="hidden sm:inline">Гайка, Рокфор, Чип, Дейл и Вжик — семейный бюджет</span>
               </div>
               <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-5xl">
                 Калькулятор доходов и расходов
@@ -1016,7 +1021,7 @@ if (saved) {
             <p className="mt-1 text-sm text-slate-400">Нажмите на участника, чтобы добавить доход или расход</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
             {FAMILY_MEMBERS.map((member) => {
               const income = sumAmounts(periodTransactions, (item) => item.memberId === member.id && item.type === "income");
               const expense = sumAmounts(periodTransactions, (item) => item.memberId === member.id && item.type === "expense");
@@ -1036,7 +1041,7 @@ if (saved) {
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
-                    <MemberAvatar name={member.name} size={isCompact ? "md" : "lg"} />
+                    <MemberAvatar name={member.name} photo={member.photo} size={isCompact ? "md" : "lg"} />
                     <div className="min-w-0">
                       <div className="text-base font-bold sm:text-xl">{member.name}</div>
                       <div className="mt-0.5 text-xs text-green-400 sm:mt-1 sm:text-sm">+ {currency.format(income)}</div>
@@ -1132,7 +1137,7 @@ if (saved) {
 
               <div className="mb-4 rounded-2xl border border-white/10 bg-slate-900/70 p-3">
                 <div className="flex items-center gap-3">
-            <MemberAvatar name={selectedMemberPreview.name} size="md" />
+            <MemberAvatar name={selectedMemberPreview.name} photo={selectedMemberPreview.photo} size="md" />
                   <div>
                     <div className="text-sm text-slate-400">Выбрано</div>
                     <div className="font-semibold">{selectedMemberPreview.name}</div>
@@ -1465,6 +1470,7 @@ if (saved) {
                           <div className="flex items-center gap-3">
                             <MemberAvatar
                               name={getMemberName(item.memberId)}
+                              photo={getMemberPhoto(item.memberId)}
                               size="sm"
                             />
                             <span className="font-medium">{getMemberName(item.memberId)}</span>
@@ -1540,6 +1546,7 @@ if (saved) {
                                 <div className="flex items-center gap-3">
                                   <MemberAvatar
                                     name={getMemberName(item.memberId)}
+                                    photo={getMemberPhoto(item.memberId)}
                                     size="sm"
                                   />
                                   <span>{getMemberName(item.memberId)}</span>
@@ -1987,7 +1994,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <MemberAvatar name={getMemberName(item.memberId)} size="sm" />
+                      <MemberAvatar name={getMemberName(item.memberId)} photo={getMemberPhoto(item.memberId)} size="sm" />
                       <span className="font-medium">{getMemberName(item.memberId)}</span>
                     </div>
                     <p className="text-sm text-slate-200">{getCategoryLabel(item)}</p>
@@ -2053,7 +2060,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                         <td className="p-3 text-slate-300">{formatDisplayDate(item.date)}</td>
                         <td className="p-3">
                           <div className="flex items-center gap-3">
-                            <MemberAvatar name={getMemberName(item.memberId)} size="sm" />
+                            <MemberAvatar name={getMemberName(item.memberId)} photo={getMemberPhoto(item.memberId)} size="sm" />
                             <span>{getMemberName(item.memberId)}</span>
                           </div>
                         </td>
@@ -2154,7 +2161,7 @@ function EmptyState({ text }) {
   return <div className="flex min-h-[160px] items-center justify-center p-6 text-center text-slate-400">{text}</div>;
 }
 
-function MemberAvatar({ name, size = "md" }) {
+function MemberAvatar({ name, photo, size = "md" }) {
   const initial = String(name || "?").trim().slice(0, 1).toUpperCase();
 
   const box =
@@ -2163,6 +2170,16 @@ function MemberAvatar({ name, size = "md" }) {
       : size === "sm"
         ? "h-8 w-8 text-xs"
         : "h-12 w-12 text-base";
+
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt={name}
+        className={`shrink-0 rounded-full object-cover ring-2 ring-white/10 ${box}`}
+      />
+    );
+  }
 
   return (
     <div
