@@ -230,6 +230,22 @@ function formatDisplayDate(dateStr) {
   return `${day}.${month}.${year}`;
 }
 
+function openNativeDatePicker(inputRef) {
+  const input = inputRef.current;
+  if (!input) return;
+  if (typeof input.showPicker === "function") {
+    input.showPicker();
+  } else {
+    input.click();
+  }
+}
+
+function syncDateFromIso(iso, setForm, setDateInput) {
+  if (!iso) return;
+  setForm((prev) => ({ ...prev, date: iso }));
+  setDateInput(formatDisplayDate(iso));
+}
+
 function parseDisplayDate(value) {
   const trimmed = String(value || "").trim();
   const match = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
@@ -490,6 +506,7 @@ export default function App() {
   const mainPanelRef = useRef(null);
   const formPanelRef = useRef(null);
   const amountInputRef = useRef(null);
+  const datePickerRef = useRef(null);
   const isCompact = useMediaQuery("(max-width: 639px)");
   const { toggleTheme, isDark } = useTheme();
   const chartTooltipProps = useMemo(() => getChartTooltipProps(isDark), [isDark]);
@@ -1304,24 +1321,44 @@ if (saved) {
               </Field>
 
               <Field label="Дата">
-                <input
-                  className="input"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  placeholder="ДД.ММ.ГГГГ"
-                  value={dateInput}
-                  onChange={(e) => {
-                    setDateInput(e.target.value);
-                    const iso = parseDisplayDate(e.target.value);
-                    if (iso) setForm((prev) => ({ ...prev, date: iso }));
-                  }}
-                  onBlur={() => {
-                    const iso = parseDisplayDate(dateInput) || form.date;
-                    setForm((prev) => ({ ...prev, date: iso }));
-                    setDateInput(formatDisplayDate(iso));
-                  }}
-                />
+                <div className="flex gap-2">
+                  <input
+                    className="input min-w-0 flex-1"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="ДД.ММ.ГГГГ"
+                    value={dateInput}
+                    onChange={(e) => {
+                      setDateInput(e.target.value);
+                      const iso = parseDisplayDate(e.target.value);
+                      if (iso) setForm((prev) => ({ ...prev, date: iso }));
+                    }}
+                    onBlur={() => {
+                      const iso = parseDisplayDate(dateInput) || form.date;
+                      setForm((prev) => ({ ...prev, date: iso }));
+                      setDateInput(formatDisplayDate(iso));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => openNativeDatePicker(datePickerRef)}
+                    className="flex min-h-[52px] w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                    title="Открыть календарь"
+                    aria-label="Открыть календарь"
+                  >
+                    <CalendarDays size={20} />
+                  </button>
+                  <input
+                    ref={datePickerRef}
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => syncDateFromIso(e.target.value, setForm, setDateInput)}
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden
+                  />
+                </div>
               </Field>
 
               <Field label="Комментарий">
