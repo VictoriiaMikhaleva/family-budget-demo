@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function () {
+        var theme = localStorage.getItem("family-budget-demo-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var isDark = theme === "dark" || (!theme && prefersDark);
+        var root = document.documentElement;
+        root.classList.toggle("dark", isDark);
+        root.setAttribute("data-theme", isDark ? "dark" : "light");
+        root.style.colorScheme = isDark ? "dark" : "light";
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/family-budget-demo/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Демо калькулятора семейного бюджета — учёт доходов и расходов, лимиты и графики" />
+    <meta name="theme-color" content="#020617" />
+    <title>Калькулятор расходов — демо</title>
+    <script type="module" crossorigin src="/family-budget-demo/assets/index-MOoFOelm.js"></script>
+    <link rel="stylesheet" crossorigin href="/family-budget-demo/assets/index-3FuHzk6P.css">
+  </head>
+  <body class="antialiased">
+    <div id="root"></div>
+    <noscript>
+      <p style="margin: 2rem; font-family: system-ui, sans-serif; color: #0f172a">Включите JavaScript, чтобы открыть калькулятор расходов.</p>
+    </noscript>
+  </body>
+</html>
