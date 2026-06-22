@@ -35,6 +35,8 @@ import {
   X,
   Pencil,
   Save,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   getCloudRevision,
@@ -43,11 +45,11 @@ import {
 } from "./firebase";
 
 const FAMILY_MEMBERS = [
-  { id: "gadget", name: "Гайка", photo: "/avatars/gadget.svg" },
-  { id: "rockfor", name: "Рокфор", photo: "/avatars/rockfor.svg" },
-  { id: "chip", name: "Чип", photo: "/avatars/chip.svg" },
-  { id: "dale", name: "Дейл", photo: "/avatars/dale.svg" },
-  { id: "zipper", name: "Вжик", photo: "/avatars/zipper.svg" },
+  { id: "member1", name: "Сима", photo: "/avatars/member-1.png" },
+  { id: "member2", name: "Рыжик", photo: "/avatars/member-2.png" },
+  { id: "member3", name: "Умка", photo: "/avatars/member-3.png" },
+  { id: "member4", name: "Плюша", photo: "/avatars/member-4.png" },
+  { id: "member5", name: "Снежок", photo: "/avatars/member-5.png" },
 ];
 
 const MEMBER_OPTIONS = [{ id: "all", name: "Все" }, ...FAMILY_MEMBERS];
@@ -116,22 +118,29 @@ const PIE_COLORS = [
   "#22c55e",
 ];
 
-const CHART_TOOLTIP_PROPS = {
-  contentStyle: {
-    background: "#0f172a",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 16,
-    color: "#f8fafc",
-  },
-  itemStyle: { color: "#f8fafc" },
-  labelStyle: { color: "#cbd5e1" },
-};
+function getChartTooltipProps(isDark) {
+  return {
+    contentStyle: {
+      background: isDark ? "#0f172a" : "#ffffff",
+      border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #e2e8f0",
+      borderRadius: 16,
+      color: isDark ? "#f8fafc" : "#0f172a",
+    },
+    itemStyle: { color: isDark ? "#f8fafc" : "#0f172a" },
+    labelStyle: { color: isDark ? "#cbd5e1" : "#475569" },
+  };
+}
+
+function getChartAxisColor(isDark) {
+  return isDark ? "#cbd5e1" : "#475569";
+}
 
 function formatChartTooltipValue(value) {
   return [currency.format(value), ""];
 }
 
 const STORAGE_KEY = "family-budget-demo-v1";
+const THEME_KEY = "family-budget-demo-theme";
 
 const currency = new Intl.NumberFormat("ru-RU", {
   style: "currency",
@@ -307,6 +316,29 @@ function formatDayTotal(group) {
   return parts.join(" · ");
 }
 
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "dark";
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const isDark = theme === "dark";
+    root.classList.toggle("dark", isDark);
+    localStorage.setItem(THEME_KEY, theme);
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", isDark ? "#020617" : "#f8fafc");
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  }
+
+  return { theme, toggleTheme, isDark: theme === "dark" };
+}
+
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia(query).matches : false
@@ -376,6 +408,10 @@ export default function App() {
   const formPanelRef = useRef(null);
   const amountInputRef = useRef(null);
   const isCompact = useMediaQuery("(max-width: 639px)");
+  const { toggleTheme, isDark } = useTheme();
+  const chartTooltipProps = useMemo(() => getChartTooltipProps(isDark), [isDark]);
+  const chartAxisColor = getChartAxisColor(isDark);
+  const chartGridStroke = isDark ? "rgba(255,255,255,0.1)" : "rgba(15,23,42,0.08)";
   const chartHeight = isCompact ? 240 : 320;
   const pieOnlyHeight = isCompact ? 220 : 260;
   const categoryBarHeight = isCompact ? 260 : 320;
@@ -980,20 +1016,29 @@ if (saved) {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-950 text-slate-100 safe-area-x safe-area-bottom">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 safe-area-x safe-area-bottom dark:bg-slate-950 dark:text-slate-100">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="fixed right-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/95 text-slate-700 shadow-lg backdrop-blur transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900/95 dark:text-amber-300 dark:hover:bg-slate-800 sm:right-4 sm:top-4"
+        aria-label={isDark ? "Включить светлую тему" : "Включить тёмную тему"}
+        title={isDark ? "Светлая тема" : "Тёмная тема"}
+      >
+        {isDark ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
       <div className="mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4 md:p-8">
-        <header className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-4 shadow-2xl sm:rounded-3xl sm:p-6">
+        <header className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 p-4 shadow-2xl sm:rounded-3xl sm:p-6">
           <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-xs text-slate-300 sm:mb-3 sm:px-3 sm:text-sm">
+              <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full bg-slate-200/80 dark:bg-white/10 px-2.5 py-1 text-xs text-slate-600 dark:text-slate-300 sm:mb-3 sm:px-3 sm:text-sm">
                 <Users size={14} className="shrink-0 sm:h-4 sm:w-4" />
-                <span className="sm:hidden">Спасатели · бюджет</span>
-                <span className="hidden sm:inline">Гайка, Рокфор, Чип, Дейл и Вжик — семейный бюджет</span>
+                <span className="sm:hidden">Семейный бюджет</span>
+                <span className="hidden sm:inline">Семейный бюджет — Сима, Рыжик, Умка, Плюша и Снежок</span>
               </div>
               <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl md:text-5xl">
                 Калькулятор доходов и расходов
               </h1>
-              <p className="mt-2 text-sm text-slate-300 sm:mt-3 sm:text-base">
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 sm:mt-3 sm:text-base">
                 Вносите доходы и траты, следите за лимитами, графиками и балансом.
               </p>
             </div>
@@ -1003,22 +1048,22 @@ if (saved) {
                 balance >= 0 ? "bg-green-500/15" : "bg-red-500/15"
               }`}
             >
-              <p className="text-sm text-slate-300">{periodLabel ? `Баланс за ${periodLabel}` : "Текущий баланс"}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{periodLabel ? `Баланс за ${periodLabel}` : "Текущий баланс"}</p>
               <p className={`text-3xl font-black leading-none sm:text-4xl ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>
                 {currency.format(balance)}
               </p>
-              <p className="mt-1 text-sm text-slate-400">Норма накопления: {savingRate}%</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Норма накопления: {savingRate}%</p>
             </div>
           </div>
         </header>
 
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+        <section className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
           <div className="mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
               <Users size={20} />
               <h2 className="text-xl font-bold sm:text-2xl">Участники семьи</h2>
             </div>
-            <p className="mt-1 text-sm text-slate-400">Нажмите на участника, чтобы добавить доход или расход</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Нажмите на участника, чтобы добавить доход или расход</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
@@ -1034,10 +1079,10 @@ if (saved) {
                   type="button"
                   onClick={() => handleMemberClick(member.id)}
                   title={`Добавить операцию для ${member.name}`}
-                  className={`rounded-2xl border bg-slate-900/70 p-3 text-left transition active:scale-[0.98] sm:p-4 sm:hover:-translate-y-1 sm:hover:bg-slate-900 ${
+                  className={`rounded-2xl border bg-white dark:bg-slate-900/70 p-3 text-left transition active:scale-[0.98] sm:p-4 sm:hover:-translate-y-1 sm:hover:bg-slate-200 dark:hover:bg-slate-100 dark:bg-slate-900 ${
                     isSelected
                       ? "border-blue-400/60 ring-2 ring-blue-400/30"
-                      : "border-white/10"
+                      : "border-slate-200 dark:border-white/10"
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:items-center sm:gap-4 sm:text-left">
@@ -1093,7 +1138,7 @@ if (saved) {
         </section>
 
         <main ref={mainPanelRef} className="grid gap-4 scroll-mt-4 sm:gap-6 lg:grid-cols-[minmax(0,430px)_1fr]">
-          <section ref={formPanelRef} className="scroll-mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+          <section ref={formPanelRef} className="scroll-mt-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xl font-bold sm:text-2xl">
                 {editingId
@@ -1103,25 +1148,25 @@ if (saved) {
                     : "Добавить операцию"}
               </h2>
               {editingId && (
-                <button type="button" onClick={() => resetForm()} className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm hover:bg-white/15">
+                <button type="button" onClick={() => resetForm()} className="inline-flex items-center gap-2 rounded-xl bg-slate-200/80 dark:bg-white/10 px-3 py-2 text-sm hover:bg-slate-300 dark:hover:bg-white/15">
                   <X size={16} /> Отмена
                 </button>
               )}
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-900 p-1">
+              <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 dark:bg-slate-900 p-1">
                 <button
                   type="button"
                   onClick={() => handleTypeChange("expense")}
-                  className={`rounded-xl px-4 py-3 font-semibold transition ${form.type === "expense" ? "bg-red-500 text-white" : "text-slate-400 hover:bg-white/5"}`}
+                  className={`rounded-xl px-4 py-3 font-semibold transition ${form.type === "expense" ? "bg-red-500 text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/5"}`}
                 >
                   Расход
                 </button>
                 <button
                   type="button"
                   onClick={() => handleTypeChange("income")}
-                  className={`rounded-xl px-4 py-3 font-semibold transition ${form.type === "income" ? "bg-green-500 text-white" : "text-slate-400 hover:bg-white/5"}`}
+                  className={`rounded-xl px-4 py-3 font-semibold transition ${form.type === "income" ? "bg-green-500 text-white" : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/5"}`}
                 >
                   Доход
                 </button>
@@ -1135,11 +1180,11 @@ if (saved) {
                 </select>
               </Field>
 
-              <div className="mb-4 rounded-2xl border border-white/10 bg-slate-900/70 p-3">
+              <div className="mb-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-3">
                 <div className="flex items-center gap-3">
             <MemberAvatar name={selectedMemberPreview.name} photo={selectedMemberPreview.photo} size="md" />
                   <div>
-                    <div className="text-sm text-slate-400">Выбрано</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Выбрано</div>
                     <div className="font-semibold">{selectedMemberPreview.name}</div>
                   </div>
                 </div>
@@ -1173,7 +1218,7 @@ if (saved) {
 
               <button
                 type="submit"
-                className={`mt-4 flex min-h-[48px] w-full touch-manipulation items-center justify-center gap-2 rounded-2xl px-5 py-4 font-bold text-white shadow-lg transition active:scale-[0.99] sm:hover:scale-[1.01] ${form.type === "expense" ? "bg-red-500 hover:bg-red-400" : "bg-green-500 hover:bg-green-400"}`}
+                className={`mt-4 flex min-h-[48px] w-full touch-manipulation items-center justify-center gap-2 rounded-2xl px-5 py-4 font-bold text-slate-900 dark:text-white shadow-lg transition active:scale-[0.99] sm:hover:scale-[1.01] ${form.type === "expense" ? "bg-red-500 hover:bg-red-400" : "bg-green-500 hover:bg-green-400"}`}
               >
                 {editingId ? <Save size={18} /> : <Plus size={18} />}
                 {editingId ? "Сохранить изменения" : "Добавить"}
@@ -1193,7 +1238,7 @@ if (saved) {
           </section>
 
           <section className="space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-2 shadow-xl">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-2 shadow-xl">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
                 <TabButton active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} icon={<LineChart size={16} />} label="Графики" compact={isCompact} />
                 <TabButton active={activeTab === "limits"} onClick={() => setActiveTab("limits")} icon={<Target size={16} />} label="Лимиты" compact={isCompact} />
@@ -1219,7 +1264,7 @@ if (saved) {
                               cy="50%"
                               outerRadius={isCompact ? "78%" : "82%"}
                               label={({ percent }) => `${Math.round(percent * 100)}%`}
-                              labelLine={{ stroke: "#94a3b8", strokeWidth: 1 }}
+                              labelLine={{ stroke: chartAxisColor, strokeWidth: 1 }}
                               onClick={(_, index) => {
                                 const name = expensesByCategory[index]?.name;
                                 if (name) openCategoryDrilldown(name);
@@ -1240,7 +1285,7 @@ if (saved) {
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => [currency.format(value), name]}
-                              {...CHART_TOOLTIP_PROPS}
+                              {...chartTooltipProps}
                             />
                           </PieChart>
                         </ResponsiveContainer>
@@ -1258,10 +1303,10 @@ if (saved) {
                   <ChartCard title="Доходы и расходы по участникам">
                     <ResponsiveContainer width="100%" height={chartHeight}>
                       <BarChart data={memberBarData} margin={isCompact ? { left: -12, right: 4, bottom: 0 } : undefined}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="name" stroke="#cbd5e1" tick={{ fontSize: isCompact ? 11 : 12 }} />
-                        <YAxis stroke="#cbd5e1" width={isCompact ? 36 : 60} tick={{ fontSize: 11 }} tickFormatter={(value) => `${Math.round(value / 1000)}к`} />
-                        <Tooltip formatter={formatChartTooltipValue} {...CHART_TOOLTIP_PROPS} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                        <XAxis dataKey="name" stroke={chartAxisColor} tick={{ fontSize: isCompact ? 11 : 12 }} />
+                        <YAxis stroke={chartAxisColor} width={isCompact ? 36 : 60} tick={{ fontSize: 11 }} tickFormatter={(value) => `${Math.round(value / 1000)}к`} />
+                        <Tooltip formatter={formatChartTooltipValue} {...chartTooltipProps} />
                         <Legend />
                         <Bar
                           dataKey="Доходы"
@@ -1289,27 +1334,28 @@ if (saved) {
                         data={expensesByCategory}
                         margin={isCompact ? { left: -8, right: 8, bottom: 56 } : { left: 0, right: 8, bottom: 48 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                         <XAxis
                           dataKey="name"
-                          stroke="#cbd5e1"
+                          stroke={chartAxisColor}
                           interval={0}
                           height={isCompact ? 72 : 60}
                           tick={(props) => (
                             <CategoryAxisTick
                               {...props}
+                              isDark={isDark}
                               selectedCategory={selectedExpenseCategory}
                               onSelect={openCategoryDrilldown}
                             />
                           )}
                         />
                         <YAxis
-                          stroke="#cbd5e1"
+                          stroke={chartAxisColor}
                           width={isCompact ? 36 : 60}
                           tick={{ fontSize: 11 }}
                           tickFormatter={(value) => `${Math.round(value / 1000)}к`}
                         />
-                        <Tooltip formatter={formatChartTooltipValue} {...CHART_TOOLTIP_PROPS} />
+                        <Tooltip formatter={formatChartTooltipValue} {...chartTooltipProps} />
                         <Bar
                           dataKey="value"
                           radius={[8, 8, 0, 0]}
@@ -1337,10 +1383,10 @@ if (saved) {
                   {monthlyData.length ? (
                     <ResponsiveContainer width="100%" height={chartHeight + 10}>
                       <AreaChart data={monthlyData} margin={isCompact ? { left: -12, right: 4 } : undefined}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="month" stroke="#cbd5e1" tick={{ fontSize: 11 }} />
-                        <YAxis stroke="#cbd5e1" width={isCompact ? 36 : 60} tick={{ fontSize: 11 }} tickFormatter={(value) => `${Math.round(value / 1000)}к`} />
-                        <Tooltip formatter={(value) => currency.format(value)} {...CHART_TOOLTIP_PROPS} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                        <XAxis dataKey="month" stroke={chartAxisColor} tick={{ fontSize: 11 }} />
+                        <YAxis stroke={chartAxisColor} width={isCompact ? 36 : 60} tick={{ fontSize: 11 }} tickFormatter={(value) => `${Math.round(value / 1000)}к`} />
+                        <Tooltip formatter={(value) => currency.format(value)} {...chartTooltipProps} />
                         <Legend />
                         <Area type="monotone" dataKey="Доходы" stroke="#22c55e" fill="#22c55e" fillOpacity={0.18} />
                         <Area type="monotone" dataKey="Расходы" stroke="#ef4444" fill="#ef4444" fillOpacity={0.18} />
@@ -1374,7 +1420,7 @@ if (saved) {
             )}
 
             {activeTab === "limits" && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <Target size={20} />
                   <h2 className="text-xl font-bold sm:text-2xl">
@@ -1384,14 +1430,14 @@ if (saved) {
 
                 <div className="space-y-3">
                   {limitsData.map((item) => (
-                    <div key={item.category} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+                    <div key={item.category} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-4">
                       <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div>
                           <div className="flex items-center gap-2 font-bold">
                             {item.percent >= 100 && <AlertTriangle size={18} className="text-red-400" />}
                             {item.category}
                           </div>
-                          <div className="text-sm text-slate-400">
+                          <div className="text-sm text-slate-500 dark:text-slate-400">
                             Потрачено {currency.format(item.spent)} из {currency.format(item.limit)}. Осталось {currency.format(item.remaining)}.
                           </div>
                         </div>
@@ -1413,10 +1459,10 @@ if (saved) {
                           }}
                         />
                       </div>
-                      <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-3 overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10">
                         <div className={`h-full rounded-full ${item.percent >= 100 ? "bg-red-500" : item.percent >= 80 ? "bg-yellow-500" : "bg-green-500"}`} style={{ width: `${Math.min(item.percent, 100)}%` }} />
                       </div>
-                      <div className="mt-1 text-right text-xs text-slate-400">{item.percent}%</div>
+                      <div className="mt-1 text-right text-xs text-slate-500 dark:text-slate-400">{item.percent}%</div>
                     </div>
                   ))}
                 </div>
@@ -1424,11 +1470,11 @@ if (saved) {
             )}
 
             {activeTab === "history" && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
                 <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div>
                     <h2 className="text-xl font-bold sm:text-2xl">История операций</h2>
-                    <p className="mt-1 text-sm text-slate-400">В фильтре: доходы {currency.format(filteredIncome)}, расходы {currency.format(filteredExpense)}</p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">В фильтре: доходы {currency.format(filteredIncome)}, расходы {currency.format(filteredExpense)}</p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
@@ -1454,11 +1500,11 @@ if (saved) {
                 <div className="space-y-3 md:hidden">
                   {historyDayGroups.map((group) => (
                     <div key={group.date} className="space-y-3">
-                      <p className="text-sm font-semibold text-slate-300">{formatDisplayDate(group.date)}</p>
+                      <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">{formatDisplayDate(group.date)}</p>
                       {group.items.map((item) => (
                         <article
                           key={item.id}
-                          className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4"
+                          className="space-y-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-4"
                         >
                           <span
                             className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
@@ -1475,8 +1521,8 @@ if (saved) {
                             />
                             <span className="font-medium">{getMemberName(item.memberId)}</span>
                           </div>
-                          <p className="text-sm text-slate-200">{getCategoryLabel(item)}</p>
-                          <p className="text-sm text-slate-400">{item.note || "—"}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-200">{getCategoryLabel(item)}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{item.note || "—"}</p>
                           <p
                             className={`text-lg font-bold ${
                               item.type === "income" ? "text-green-400" : "text-red-400"
@@ -1489,7 +1535,7 @@ if (saved) {
                             <button
                               type="button"
                               onClick={() => handleEdit(item)}
-                              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white/10 text-sm text-slate-200 active:bg-white/15"
+                              className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-slate-200/80 dark:bg-white/10 text-sm text-slate-700 dark:text-slate-200 active:bg-slate-300 dark:active:bg-white/15"
                               title="Редактировать"
                             >
                               <Pencil size={16} /> Изменить
@@ -1505,8 +1551,8 @@ if (saved) {
                           </div>
                         </article>
                       ))}
-                      <div className="rounded-xl border border-white/15 bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-200">
-                        <span className="text-slate-400">Всего за день: </span>
+                      <div className="rounded-xl border border-slate-300 dark:border-white/15 bg-slate-200 dark:bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <span className="text-slate-500 dark:text-slate-400">Всего за день: </span>
                         {formatDayTotal(group)}
                       </div>
                     </div>
@@ -1514,9 +1560,9 @@ if (saved) {
                   {!visibleTransactions.length && <EmptyState text="Операций по выбранным фильтрам пока нет." />}
                 </div>
 
-                <div className="hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
+                <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 md:block">
                   <table className="w-full min-w-[900px] border-collapse text-left text-sm">
-                    <thead className="bg-slate-900 text-slate-300">
+                    <thead className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300">
                       <tr>
                         <th className="p-3">Дата</th>
                         <th className="p-3">Тип</th>
@@ -1531,8 +1577,8 @@ if (saved) {
                       {historyDayGroups.map((group) => (
                         <Fragment key={group.date}>
                           {group.items.map((item) => (
-                            <tr key={item.id} className="border-t border-white/10 hover:bg-white/5">
-                              <td className="p-3 text-slate-300">{item.date}</td>
+                            <tr key={item.id} className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-100/90 dark:bg-white/5">
+                              <td className="p-3 text-slate-600 dark:text-slate-300">{item.date}</td>
                               <td className="p-3">
                                 <span
                                   className={`rounded-full px-3 py-1 text-xs font-bold ${
@@ -1553,7 +1599,7 @@ if (saved) {
                                 </div>
                               </td>
                               <td className="p-3">{getCategoryLabel(item)}</td>
-                              <td className="p-3 text-slate-400">{item.note || "—"}</td>
+                              <td className="p-3 text-slate-500 dark:text-slate-400">{item.note || "—"}</td>
                               <td
                                 className={`p-3 text-right font-bold ${
                                   item.type === "income" ? "text-green-400" : "text-red-400"
@@ -1567,7 +1613,7 @@ if (saved) {
                                   <button
                                     type="button"
                                     onClick={() => handleEdit(item)}
-                                    className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+                                    className="rounded-xl p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:text-white"
                                     title="Редактировать"
                                   >
                                     <Pencil size={16} />
@@ -1575,7 +1621,7 @@ if (saved) {
                                   <button
                                     type="button"
                                     onClick={() => handleDelete(item.id)}
-                                    className="rounded-xl p-2 text-slate-400 hover:bg-red-500/15 hover:text-red-400"
+                                    className="rounded-xl p-2 text-slate-500 dark:text-slate-400 hover:bg-red-500/15 hover:text-red-400"
                                     title="Удалить"
                                   >
                                     <Trash2 size={16} />
@@ -1584,9 +1630,9 @@ if (saved) {
                               </td>
                             </tr>
                           ))}
-                          <tr className="border-t border-white/20 bg-slate-900/80">
-                            <td colSpan={7} className="p-3 text-sm font-semibold text-slate-200">
-                              <span className="text-slate-400">Всего за день: </span>
+                          <tr className="border-t border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-slate-900/80">
+                            <td colSpan={7} className="p-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                              <span className="text-slate-500 dark:text-slate-400">Всего за день: </span>
                               {formatDayTotal(group)}
                             </td>
                           </tr>
@@ -1600,7 +1646,7 @@ if (saved) {
             )}
 
             {activeTab === "advice" && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <CheckCircle2 size={20} />
                   <h2 className="text-xl font-bold sm:text-2xl">Подсказки по бюджету</h2>
@@ -1608,7 +1654,7 @@ if (saved) {
 
                 <div className="space-y-3">
                   {advice.map((tip, index) => (
-                    <div key={index} className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 text-slate-200">
+                    <div key={index} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-4 text-slate-700 dark:text-slate-200">
                       {tip}
                     </div>
                   ))}
@@ -1618,12 +1664,12 @@ if (saved) {
 
             {activeTab === "summaries" && (
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
                   <div className="mb-4 flex items-center gap-2">
                     <Archive size={20} />
                     <h2 className="text-xl font-bold sm:text-2xl">Закрыть месяц и начать заново</h2>
                   </div>
-                  <p className="mb-4 text-sm text-slate-400">
+                  <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
                     Подведите итог месяца: доходы, расходы и баланс сохранятся в архиве. Операции этого месяца уберутся из
                     текущего расчёта — можно вести новый месяц с чистого листа. Архив всегда можно посмотреть ниже.
                   </p>
@@ -1647,22 +1693,22 @@ if (saved) {
                       {monthClosePreview && (
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3">
-                            <p className="text-xs text-slate-400">Доходы</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Доходы</p>
                             <p className="text-lg font-bold text-green-400">{currency.format(monthClosePreview.income)}</p>
                           </div>
                           <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3">
-                            <p className="text-xs text-slate-400">Расходы</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Расходы</p>
                             <p className="text-lg font-bold text-red-400">{currency.format(monthClosePreview.expense)}</p>
                           </div>
                           <div className={`rounded-2xl border p-3 ${monthClosePreview.balance >= 0 ? "border-green-500/20 bg-green-500/10" : "border-red-500/20 bg-red-500/10"}`}>
-                            <p className="text-xs text-slate-400">Баланс</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Баланс</p>
                             <p className={`text-lg font-bold ${monthClosePreview.balance >= 0 ? "text-green-400" : "text-red-400"}`}>
                               {currency.format(monthClosePreview.balance)}
                             </p>
                           </div>
-                          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                            <p className="text-xs text-slate-400">Операций</p>
-                            <p className="text-lg font-bold text-white">{monthClosePreview.transactionCount}</p>
+                          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Операций</p>
+                            <p className="text-lg font-bold text-slate-900 dark:text-white">{monthClosePreview.transactionCount}</p>
                           </div>
                         </div>
                       )}
@@ -1670,7 +1716,7 @@ if (saved) {
                       <button
                         type="button"
                         onClick={handleCloseMonth}
-                        className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-sky-500 px-5 py-3 font-bold text-white transition hover:bg-sky-400"
+                        className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-sky-500 px-5 py-3 font-bold text-slate-900 dark:text-white transition hover:bg-sky-400"
                       >
                         <Archive size={18} />
                         Закрыть месяц и заархивировать
@@ -1681,7 +1727,7 @@ if (saved) {
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
                   <div className="mb-4 flex items-center gap-2">
                     <CalendarDays size={20} />
                     <h2 className="text-xl font-bold sm:text-2xl">Архив закрытых месяцев</h2>
@@ -1709,61 +1755,18 @@ if (saved) {
           </section>
         </main>
 
-        <footer className="mt-2 border-t border-white/10 pb-2 pt-3 text-center text-xs text-slate-400 sm:pb-0 sm:text-sm">
+        <footer className="mt-2 border-t border-slate-200 dark:border-white/10 pb-2 pt-3 text-center text-xs text-slate-500 dark:text-slate-400 sm:pb-0 sm:text-sm">
           Создано Викторией Михалевой ·{" "}
           <a
             href="https://www.content-system.ru/"
             target="_blank"
             rel="noreferrer"
-            className="text-slate-300 underline decoration-white/30 underline-offset-2 transition hover:text-white"
+            className="text-slate-600 dark:text-slate-300 underline decoration-slate-400/40 underline-offset-2 transition hover:text-slate-900 dark:decoration-white/30 dark:hover:text-white"
           >
             контент, ИИ и цифровые проекты
           </a>
         </footer>
       </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 1rem;
-          border: 1px solid rgba(255,255,255,0.10);
-          background: #0f172a;
-          padding: 0.85rem 1rem;
-          color: white;
-          outline: none;
-        }
-        .input:focus,
-        .small-input:focus {
-          border-color: rgba(59,130,246,0.9);
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
-        }
-        .small-input {
-          border-radius: 0.9rem;
-          border: 1px solid rgba(255,255,255,0.10);
-          background: #0f172a;
-          padding: 0.65rem 0.85rem;
-          color: white;
-          outline: none;
-        }
-        .utility-button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.35rem;
-          min-height: 44px;
-          border-radius: 1rem;
-          background: rgba(255,255,255,0.07);
-          padding: 0.75rem;
-          font-size: 0.85rem;
-          color: #cbd5e1;
-          transition: 0.2s;
-          touch-action: manipulation;
-        }
-        .utility-button:hover {
-          background: rgba(255,255,255,0.12);
-          color: white;
-        }
-      `}</style>
     </div>
   );
 }
@@ -1772,7 +1775,7 @@ if (saved) {
 function Field({ label, children }) {
   return (
     <label className="mb-3 block">
-      <span className="mb-1 block text-sm font-medium text-slate-300">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">{label}</span>
       {children}
     </label>
   );
@@ -1785,7 +1788,7 @@ function TabButton({ active, onClick, icon, label, compact = false }) {
       onClick={onClick}
       className={`flex touch-manipulation items-center justify-center rounded-2xl font-semibold transition ${
         compact ? "gap-1.5 px-2 py-2.5 text-sm" : "gap-2 px-4 py-3"
-      } ${active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}
+      } ${active ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"}`}
     >
       {icon}
       {label}
@@ -1797,7 +1800,7 @@ function StatCard({ icon, label, value, tone, onClick }) {
   const toneClass = {
     green: "border-green-500/20 bg-green-500/10 text-green-400",
     red: "border-red-500/20 bg-red-500/10 text-red-400",
-    slate: "border-white/10 bg-white/5 text-slate-200",
+    slate: "border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 text-slate-700 dark:text-slate-200",
   }[tone];
 
   const className = `w-full rounded-2xl border p-4 text-left shadow-xl transition sm:rounded-3xl sm:p-5 ${toneClass} ${
@@ -1807,25 +1810,25 @@ function StatCard({ icon, label, value, tone, onClick }) {
   if (onClick) {
     return (
       <button type="button" onClick={onClick} className={className}>
-        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 sm:mb-3 sm:h-11 sm:w-11">{icon}</div>
-        <p className="text-xs text-slate-300 sm:text-sm">{label}</p>
-        <p className="mt-1 break-words text-base font-black leading-snug text-white sm:text-xl">{value}</p>
+        <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-200/80 dark:bg-white/10 sm:mb-3 sm:h-11 sm:w-11">{icon}</div>
+        <p className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{label}</p>
+        <p className="mt-1 break-words text-base font-black leading-snug text-slate-900 dark:text-white sm:text-xl">{value}</p>
       </button>
     );
   }
 
   return (
     <div className={className}>
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 sm:mb-3 sm:h-11 sm:w-11">{icon}</div>
-      <p className="text-xs text-slate-300 sm:text-sm">{label}</p>
-      <p className="mt-1 break-words text-base font-black leading-snug text-white sm:text-xl">{value}</p>
+      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-200/80 dark:bg-white/10 sm:mb-3 sm:h-11 sm:w-11">{icon}</div>
+      <p className="text-xs text-slate-600 dark:text-slate-300 sm:text-sm">{label}</p>
+      <p className="mt-1 break-words text-base font-black leading-snug text-slate-900 dark:text-white sm:text-xl">{value}</p>
     </div>
   );
 }
 
 function ChartCard({ title, children }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-white/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
       <h2 className="mb-3 text-lg font-bold sm:mb-4 sm:text-xl">{title}</h2>
       {children}
     </div>
@@ -1834,18 +1837,18 @@ function ChartCard({ title, children }) {
 
 function MonthArchiveCard({ summary, expanded, onToggle }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+    <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-bold text-white">{summary.title}</h3>
-          <p className="mt-1 text-sm text-slate-400">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{summary.title}</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Закрыт {formatDisplayDate(summary.closedAt)} · {summary.transactionCount} операций · накопление {summary.savingRate}%
           </p>
         </div>
         <button
           type="button"
           onClick={onToggle}
-          className="rounded-xl bg-white/10 px-3 py-2 text-sm text-slate-200 hover:bg-white/15"
+          className="rounded-xl bg-slate-200/80 dark:bg-white/10 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-white/15"
         >
           {expanded ? "Скрыть" : "Подробнее"}
         </button>
@@ -1853,34 +1856,34 @@ function MonthArchiveCard({ summary, expanded, onToggle }) {
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <p className="text-xs text-slate-400">Доходы</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Доходы</p>
           <p className="font-bold text-green-400">{currency.format(summary.income)}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Расходы</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Расходы</p>
           <p className="font-bold text-red-400">{currency.format(summary.expense)}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Баланс</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Баланс</p>
           <p className={`font-bold ${summary.balance >= 0 ? "text-green-400" : "text-red-400"}`}>
             {currency.format(summary.balance)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Главная статья</p>
-          <p className="text-sm font-semibold text-slate-200">{summary.biggestExpense}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Главная статья</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{summary.biggestExpense}</p>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
+        <div className="mt-4 space-y-4 border-t border-slate-200 dark:border-white/10 pt-4">
           <div>
-            <p className="mb-2 text-sm font-semibold text-slate-300">По участникам</p>
+            <p className="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">По участникам</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {summary.byMember.map((member) => (
-                <div key={member.memberId} className="rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm">
-                  <span className="font-medium text-white">{member.name}</span>
-                  <span className="text-slate-400">
+                <div key={member.memberId} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/50 px-3 py-2 text-sm">
+                  <span className="font-medium text-slate-900 dark:text-white">{member.name}</span>
+                  <span className="text-slate-500 dark:text-slate-400">
                     {" · "}+{currency.format(member.income)} / -{currency.format(member.expense)}
                   </span>
                 </div>
@@ -1890,11 +1893,11 @@ function MonthArchiveCard({ summary, expanded, onToggle }) {
 
           {summary.byCategory?.length > 0 && (
             <div>
-              <p className="mb-2 text-sm font-semibold text-slate-300">По статьям расходов</p>
+              <p className="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">По статьям расходов</p>
               <div className="space-y-2">
                 {summary.byCategory.slice(0, 8).map((row) => (
                   <div key={row.name} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-slate-300">{row.name}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{row.name}</span>
                     <span className="font-semibold text-red-400">{currency.format(row.value)}</span>
                   </div>
                 ))}
@@ -1902,9 +1905,9 @@ function MonthArchiveCard({ summary, expanded, onToggle }) {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-white/10">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
             <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-              <thead className="bg-slate-950 text-slate-400">
+              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="p-2">Дата</th>
                   <th className="p-2">Участник</th>
@@ -1917,8 +1920,8 @@ function MonthArchiveCard({ summary, expanded, onToggle }) {
                   .slice()
                   .sort((a, b) => new Date(b.date) - new Date(a.date))
                   .map((item) => (
-                    <tr key={item.id} className="border-t border-white/10">
-                      <td className="p-2 text-slate-300">{formatDisplayDate(item.date)}</td>
+                    <tr key={item.id} className="border-t border-slate-200 dark:border-white/10">
+                      <td className="p-2 text-slate-600 dark:text-slate-300">{formatDisplayDate(item.date)}</td>
                       <td className="p-2">{getMemberName(item.memberId)}</td>
                       <td className="p-2">{getCategoryLabel(item)}</td>
                       <td className={`p-2 text-right font-semibold ${item.type === "income" ? "text-green-400" : "text-red-400"}`}>
@@ -1940,23 +1943,23 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
   const monthGroups = useMemo(() => groupTransactionsByMonth(transactions), [transactions]);
 
   return (
-    <div className="rounded-2xl border border-sky-400/30 bg-sky-500/5 p-4 shadow-xl sm:rounded-3xl sm:p-5">
+    <div className="rounded-2xl border border-sky-300 bg-sky-50 p-4 shadow-xl dark:border-sky-400/30 dark:bg-sky-500/5 sm:rounded-3xl sm:p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold sm:text-xl">{title}</h3>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {transactions.length} {transactions.length === 1 ? "операция" : transactions.length < 5 ? "операции" : "операций"}
             {" · "}итого {currency.format(total)}
             {monthGroups.length > 1 ? ` · ${monthGroups.length} месяца` : ""}
           </p>
           {monthGroups.length > 0 && (
-            <p className="mt-1 text-xs text-sky-300/80">Сгруппировано по месяцам, сначала новые</p>
+            <p className="mt-1 text-xs text-sky-600 dark:text-sky-300/80">Сгруппировано по месяцам, сначала новые</p>
           )}
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/15 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200/80 dark:bg-white/10 px-3 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/15 hover:text-slate-900 dark:text-white"
         >
           <X size={16} /> Закрыть
         </button>
@@ -1969,22 +1972,22 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
           <div className="space-y-5 md:hidden">
             {monthGroups.map((group) => (
               <div key={group.key} className="space-y-3">
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-sky-400/30 bg-sky-500/15 px-4 py-3">
-                  <span className="flex items-center gap-2 font-bold text-sky-100">
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-sky-300 bg-sky-100 px-4 py-3 dark:border-sky-400/30 dark:bg-sky-500/15">
+                  <span className="flex items-center gap-2 font-bold text-sky-800 dark:text-sky-100">
                     <CalendarDays size={16} />
                     {group.title}
                   </span>
-                  <span className="text-right text-sm text-sky-200">
-                    {group.items.length} оп. · <span className="font-bold text-white">{currency.format(group.total)}</span>
+                  <span className="text-right text-sm text-sky-700 dark:text-sky-200">
+                    {group.items.length} оп. · <span className="font-bold text-slate-900 dark:text-white">{currency.format(group.total)}</span>
                   </span>
                 </div>
                 {group.items.map((item) => (
                   <article
                     key={item.id}
-                    className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4"
+                    className="space-y-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 p-4"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-slate-400">{formatDisplayDate(item.date)}</span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{formatDisplayDate(item.date)}</span>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold ${
                           item.type === "income" ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"
@@ -1997,8 +2000,8 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                       <MemberAvatar name={getMemberName(item.memberId)} photo={getMemberPhoto(item.memberId)} size="sm" />
                       <span className="font-medium">{getMemberName(item.memberId)}</span>
                     </div>
-                    <p className="text-sm text-slate-200">{getCategoryLabel(item)}</p>
-                    <p className="text-sm text-slate-400">{item.note || "—"}</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-200">{getCategoryLabel(item)}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{item.note || "—"}</p>
                     <p className={`text-lg font-bold ${item.type === "income" ? "text-green-400" : "text-red-400"}`}>
                       {item.type === "income" ? "+" : "-"}
                       {currency.format(item.amount)}
@@ -2007,7 +2010,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                       <button
                         type="button"
                         onClick={() => onEdit(item)}
-                        className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white/10 text-sm text-slate-200"
+                        className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-slate-200/80 dark:bg-white/10 text-sm text-slate-700 dark:text-slate-200"
                       >
                         <Pencil size={16} /> Изменить
                       </button>
@@ -2025,9 +2028,9 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-white/10 md:block">
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-              <thead className="bg-slate-900 text-slate-300">
+              <thead className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300">
                 <tr>
                   <th className="p-3">Дата</th>
                   <th className="p-3">Участник</th>
@@ -2040,24 +2043,24 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
               <tbody>
                 {monthGroups.map((group) => (
                   <Fragment key={group.key}>
-                    <tr className="border-t-2 border-sky-400/40 bg-sky-500/15">
+                    <tr className="border-t-2 border-sky-300 bg-sky-100 dark:border-sky-400/40 dark:bg-sky-500/15">
                       <td colSpan={6} className="p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="flex items-center gap-2 text-base font-bold text-sky-100">
+                          <span className="flex items-center gap-2 text-base font-bold text-sky-800 dark:text-sky-100">
                             <CalendarDays size={16} />
                             {group.title}
                           </span>
-                          <span className="text-sm text-sky-200">
+                          <span className="text-sm text-sky-700 dark:text-sky-200">
                             {group.items.length} {group.items.length === 1 ? "операция" : group.items.length < 5 ? "операции" : "операций"}
                             {" · "}
-                            <span className="font-bold text-white">{currency.format(group.total)}</span>
+                            <span className="font-bold text-slate-900 dark:text-white">{currency.format(group.total)}</span>
                           </span>
                         </div>
                       </td>
                     </tr>
                     {group.items.map((item) => (
-                      <tr key={item.id} className="border-t border-white/10 hover:bg-white/5">
-                        <td className="p-3 text-slate-300">{formatDisplayDate(item.date)}</td>
+                      <tr key={item.id} className="border-t border-slate-200 dark:border-white/10 hover:bg-slate-100/90 dark:bg-white/5">
+                        <td className="p-3 text-slate-600 dark:text-slate-300">{formatDisplayDate(item.date)}</td>
                         <td className="p-3">
                           <div className="flex items-center gap-3">
                             <MemberAvatar name={getMemberName(item.memberId)} photo={getMemberPhoto(item.memberId)} size="sm" />
@@ -2065,7 +2068,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                           </div>
                         </td>
                         <td className="p-3">{getCategoryLabel(item)}</td>
-                        <td className="p-3 text-slate-400">{item.note || "—"}</td>
+                        <td className="p-3 text-slate-500 dark:text-slate-400">{item.note || "—"}</td>
                         <td className={`p-3 text-right font-bold ${item.type === "income" ? "text-green-400" : "text-red-400"}`}>
                           {item.type === "income" ? "+" : "-"}
                           {currency.format(item.amount)}
@@ -2075,7 +2078,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                             <button
                               type="button"
                               onClick={() => onEdit(item)}
-                              className="rounded-xl p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+                              className="rounded-xl p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:text-white"
                               title="Редактировать"
                             >
                               <Pencil size={16} />
@@ -2083,7 +2086,7 @@ function ChartDrilldownTable({ title, transactions, total, onClose, onEdit, onDe
                             <button
                               type="button"
                               onClick={() => onDelete(item.id)}
-                              className="rounded-xl p-2 text-slate-400 hover:bg-red-500/15 hover:text-red-400"
+                              className="rounded-xl p-2 text-slate-500 dark:text-slate-400 hover:bg-red-500/15 hover:text-red-400"
                               title="Удалить"
                             >
                               <Trash2 size={16} />
@@ -2107,7 +2110,7 @@ function CategoryExpenseLegend({ payload, selectedCategory, onSelect }) {
   if (!payload?.length) return null;
 
   return (
-    <ul className="mt-4 grid list-none grid-cols-1 gap-2 border-t border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="mt-4 grid list-none grid-cols-1 gap-2 border-t border-slate-200 dark:border-white/10 pt-4 sm:grid-cols-2 lg:grid-cols-3">
       {payload.map((entry) => {
         const name = entry.value;
         const isSelected = selectedCategory === name;
@@ -2119,12 +2122,12 @@ function CategoryExpenseLegend({ payload, selectedCategory, onSelect }) {
               type="button"
               onClick={() => onSelect(name)}
               className={`flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition sm:text-sm ${
-                isSelected ? "bg-sky-500/20 text-sky-200" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                isSelected ? "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: entry.color }} />
               <span className="min-w-0 flex-1 truncate">{name}</span>
-              {isSelected && <span className="shrink-0 font-semibold text-white">{currency.format(amount)}</span>}
+              {isSelected && <span className="shrink-0 font-semibold text-slate-900 dark:text-white">{currency.format(amount)}</span>}
             </button>
           </li>
         );
@@ -2133,9 +2136,10 @@ function CategoryExpenseLegend({ payload, selectedCategory, onSelect }) {
   );
 }
 
-function CategoryAxisTick({ x, y, payload, selectedCategory, onSelect }) {
+function CategoryAxisTick({ x, y, payload, selectedCategory, onSelect, isDark }) {
   const name = payload?.value;
   const isSelected = selectedCategory === name;
+  const fill = isSelected ? "#0284c7" : isDark ? "#cbd5e1" : "#475569";
 
   return (
     <g transform={`translate(${x},${y})`}>
@@ -2144,7 +2148,7 @@ function CategoryAxisTick({ x, y, payload, selectedCategory, onSelect }) {
         y={0}
         dy={12}
         textAnchor="end"
-        fill={isSelected ? "#38bdf8" : "#cbd5e1"}
+        fill={fill}
         fontSize={10}
         fontWeight={isSelected ? 700 : 400}
         transform="rotate(-28)"
@@ -2158,7 +2162,7 @@ function CategoryAxisTick({ x, y, payload, selectedCategory, onSelect }) {
 }
 
 function EmptyState({ text }) {
-  return <div className="flex min-h-[160px] items-center justify-center p-6 text-center text-slate-400">{text}</div>;
+  return <div className="flex min-h-[160px] items-center justify-center p-6 text-center text-slate-500 dark:text-slate-400">{text}</div>;
 }
 
 function MemberAvatar({ name, photo, size = "md" }) {
@@ -2183,7 +2187,7 @@ function MemberAvatar({ name, photo, size = "md" }) {
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-600/45 to-violet-700/45 font-bold text-white ring-2 ring-white/10 ${box}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-600/45 to-violet-700/45 font-bold text-slate-900 dark:text-white ring-2 ring-white/10 ${box}`}
       aria-hidden
     >
       {initial}
